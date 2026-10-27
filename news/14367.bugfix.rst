@@ -1,0 +1,1 @@
+Respect Python UTF-8 Mode (``-X utf8`` / ``PYTHONUTF8=1``) in ``get_locale_encoding()`` so UTF-8 configuration files are read correctly on Windows.

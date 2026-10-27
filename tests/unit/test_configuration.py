@@ -1,6 +1,10 @@
 """Tests for all things related to the configuration"""
 
+import locale
 import re
+import sys
+from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
@@ -21,6 +25,20 @@ def test_invalid_load_only_lists_source_values() -> None:
 
 
 class TestConfigurationLoading(ConfigurationMixin):
+    def test_utf8_config_loading_under_utf8_mode(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        config_file = tmp_path / "pip.ini"
+        config_file.write_bytes(
+            "[global]\n# \u4e2d\u6587\u6ce8\u91ca\ntimeout = 15\n".encode("utf-8")
+        )
+        monkeypatch.setattr(sys, "flags", SimpleNamespace(utf8_mode=1))
+        monkeypatch.setattr(locale, "getencoding", lambda: "cp936", raising=False)
+        monkeypatch.setenv("PIP_CONFIG_FILE", str(config_file))
+
+        self.configuration.load()
+        assert self.configuration.get_value("global.timeout") == "15"
+
     def test_global_loading(self) -> None:
         self.patch_configuration(Kind.GLOBAL, {"test.hello": "1"})
 

@@ -1,9 +1,12 @@
+import locale
 import os
+import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
-from pip._internal.utils.compat import get_path_uid
+from pip._internal.utils.compat import get_locale_encoding, get_path_uid
 
 
 def test_get_path_uid() -> None:
@@ -44,3 +47,21 @@ def test_get_path_uid_symlink_without_NOFOLLOW(
     os.symlink(f, fs)
     with pytest.raises(OSError):
         get_path_uid(fs)
+
+
+def test_get_locale_encoding_under_utf8_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(sys, "flags", SimpleNamespace(utf8_mode=1))
+    monkeypatch.setattr(locale, "getencoding", lambda: "cp936", raising=False)
+    assert get_locale_encoding() == "utf-8"
+
+
+def test_get_locale_encoding_without_utf8_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(sys, "flags", SimpleNamespace(utf8_mode=0))
+    if sys.version_info >= (3, 11):
+        monkeypatch.setattr(locale, "getencoding", lambda: "cp936")
+        assert get_locale_encoding() == "cp936"
+    else:
+        monkeypatch.setattr(
+            locale, "getpreferredencoding", lambda do_setlocale: "cp936"
+        )
+        assert get_locale_encoding() == "cp936"
