@@ -93,7 +93,8 @@ def is_within_directory(
         abs_directory = os.path.abspath(directory)
         abs_target = os.path.abspath(target)
 
-    return abs_target == abs_directory or abs_target.startswith(abs_directory + os.sep)
+    prefix = abs_directory if abs_directory.endswith(os.sep) else abs_directory + os.sep
+    return abs_target == abs_directory or abs_target.startswith(prefix)
 
 
 def _get_default_mode_plus_executable() -> int:
